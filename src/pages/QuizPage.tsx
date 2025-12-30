@@ -75,6 +75,10 @@ export default function QuizPage() {
   const [results, setResults] = useState<{ correct: number; total: number } | null>(null);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
 
+  // Execution state
+  const [output, setOutput] = useState('');
+  const [isExecuting, setIsExecuting] = useState(false);
+
   const questionStartTime = useRef<number>(Date.now());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -277,6 +281,54 @@ export default function QuizPage() {
     });
   };
 
+  const handleRunCode = async () => {
+    if (!currentQuestion || isExecuting) return;
+    setIsExecuting(true);
+    setOutput('> Executing code...\n');
+
+    try {
+      const language = quiz?.language || 'javascript';
+      const version = {
+        'javascript': '18.15.0',
+        'python': '3.10.0',
+        'java': '17.0.2',
+        'cpp': '10.2.0',
+        'go': '1.16.2',
+        'csharp': '5.0.201',
+        'ruby': '3.0.1'
+      }[language] || '18.15.0';
+
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language,
+          version,
+          files: [{ content: userCode }]
+        })
+      });
+
+      const data = await response.json();
+      if (data.run) {
+        const runOutput = (data.run.stdout || '') + (data.run.stderr || '');
+        setOutput(runOutput);
+
+        // Visual feedback if it matches expected output
+        if (runOutput.trim() === currentQuestion.expected_output?.trim()) {
+          toast({
+            title: "Output Match!",
+            description: "Your code produced the expected output.",
+            className: "bg-matrix-green border-matrix-green text-black"
+          });
+        }
+      }
+    } catch (error) {
+      setOutput('Error connecting to execution environment.');
+    } finally {
+      setIsExecuting(false);
+    }
+  };
+
   const handleAutoSubmit = useCallback(() => {
     handleSubmitAnswer();
   }, []);
@@ -288,9 +340,47 @@ export default function QuizPage() {
     if (timerRef.current) clearInterval(timerRef.current);
 
     const timeTaken = Math.round((Date.now() - questionStartTime.current) / 1000);
-    const isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
 
-    await supabase.from('submissions').insert([{
+    // First try output match, fallback to code match
+    let isCorrect = false;
+
+    // Attempt output verification via API if expected output is provided
+    if (currentQuestion.expected_output) {
+      try {
+        const language = quiz?.language || 'javascript';
+        const version = {
+          'javascript': '18.15.0',
+          'python': '3.10.0',
+          'java': '17.0.2',
+          'cpp': '10.2.0',
+          'go': '1.16.2',
+          'csharp': '5.0.201',
+          'ruby': '3.0.1'
+        }[language] || '18.15.0';
+
+        const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            language,
+            version,
+            files: [{ content: userCode }]
+          })
+        });
+
+        const data = await response.json();
+        if (data.run && data.run.stdout?.trim() === currentQuestion.expected_output.trim()) {
+          isCorrect = true;
+        }
+      } catch (e) {
+        // Fallback to strict code match if API fails
+        isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
+      }
+    } else {
+      isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
+    }
+
+    await (supabase.from('submissions') as any).insert([{
       assignment_id: assignmentId,
       question_id: currentQuestion.id,
       user_code: userCode,
@@ -328,6 +418,7 @@ export default function QuizPage() {
   useEffect(() => {
     if (currentQuestion) {
       setUserCode(currentQuestion.incorrect_code);
+      setOutput(''); // Reset output for next question
     }
   }, [currentQuestion]);
 
@@ -439,43 +530,82 @@ export default function QuizPage() {
           </CardContent>
         </Card>
 
-        <div className="flex-1 min-h-[400px] rounded-lg overflow-hidden border border-matrix-green/30 border-glow">
-          <Editor
-            height="100%"
-            language={languageToMonaco[quiz?.language || 'javascript']}
-            value={userCode}
-            onChange={(value) => setUserCode(value || '')}
-            onMount={handleEditorMount}
-            theme="vs-dark"
-            options={{
-              fontSize: 14,
-              fontFamily: 'JetBrains Mono, monospace',
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              padding: { top: 16, bottom: 16 },
-              lineNumbers: 'on',
-              renderLineHighlight: 'all',
-              contextmenu: false,
-            }}
-          />
+        <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 min-h-[400px]">
+          {/* Editor - 3/4 Width */}
+          <div className="lg:col-span-3 flex flex-col rounded-lg overflow-hidden border border-matrix-green/30 border-glow bg-black">
+            <div className="bg-black/80 border-b border-matrix-green/20 px-4 py-2 flex items-center justify-between">
+              <span className="text-xs font-mono text-matrix-green/60 uppercase">main.{languageToMonaco[quiz?.language || 'javascript'] === 'python' ? 'py' : 'code'}</span>
+              <div className="flex gap-2">
+                <div className="w-2 h-2 rounded-full bg-red-500/30" />
+                <div className="w-2 h-2 rounded-full bg-yellow-500/30" />
+                <div className="w-2 h-2 rounded-full bg-matrix-green/30" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <Editor
+                height="100%"
+                language={languageToMonaco[quiz?.language || 'javascript']}
+                value={userCode}
+                onChange={(value) => setUserCode(value || '')}
+                onMount={handleEditorMount}
+                theme="vs-dark"
+                options={{
+                  fontSize: 14,
+                  fontFamily: 'JetBrains Mono, monospace',
+                  minimap: { enabled: false },
+                  scrollBeyondLastLine: false,
+                  padding: { top: 16, bottom: 16 },
+                  lineNumbers: 'on',
+                  renderLineHighlight: 'all',
+                  contextmenu: false,
+                  cursorSmoothCaretAnimation: 'on',
+                  smoothScrolling: true,
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Console - 1/4 Width */}
+          <div className="lg:col-span-1 flex flex-col glass-effect border border-matrix-green/20 bg-black/80 rounded-lg overflow-hidden cyber-border">
+            <div className="border-b border-matrix-green/10 px-3 py-2 flex items-center gap-2 bg-black/40">
+              <Terminal className="w-3 h-3 text-matrix-green" />
+              <span className="text-[10px] font-matrix text-matrix-green tracking-widest uppercase">Console_Output</span>
+            </div>
+            <div className="flex-1 p-3 font-mono text-xs overflow-auto text-matrix-green whitespace-pre-wrap bg-black/20">
+              {output || <span className="text-matrix-green/20">No output. Run code to verify.</span>}
+              {isExecuting && <span className="inline-block w-1.5 h-3.5 bg-matrix-green ml-1 animate-blink" />}
+            </div>
+            <div className="p-2 border-t border-matrix-green/10 bg-black/40">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRunCode}
+                disabled={isExecuting || isSubmitting}
+                className="w-full text-xs font-mono border-matrix-green/30 text-matrix-green hover:bg-matrix-green/20 h-8"
+              >
+                {isExecuting ? <Loader2 className="w-3 h-3 mr-2 animate-spin" /> : <Play className="w-3 h-3 mr-2" />}
+                RUN_ANALYSIS
+              </Button>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-4 flex justify-end">
+        <div className="mt-4 flex justify-end gap-3">
           <Button
             onClick={handleSubmitAnswer}
-            disabled={isSubmitting}
-            className="font-mono min-w-40 bg-matrix-green hover:bg-matrix-green-light text-black font-bold transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,255,65,0.5)]"
+            disabled={isSubmitting || isExecuting}
+            className="font-mono min-w-48 bg-matrix-green hover:bg-matrix-green-light text-black font-bold transition-all duration-300 hover:shadow-[0_0_30px_rgba(0,255,65,0.5)]"
             size="lg"
           >
             {isSubmitting ? (
-              'Submitting...'
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : currentQuestionIndex < questions.length - 1 ? (
               <>
-                Next Question
+                Finalize & Next
                 <ChevronRight className="w-4 h-4 ml-2" />
               </>
             ) : (
-              'Finish Quiz'
+              'Terminate Challenge'
             )}
           </Button>
         </div>
