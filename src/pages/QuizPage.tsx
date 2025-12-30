@@ -269,12 +269,12 @@ export default function QuizPage() {
   const logCheatEvent = async (eventType: string, details: string) => {
     if (!user || !assignmentId) return;
 
-    await supabase.from('cheat_logs').insert([{
+    await supabase.from('cheat_logs').insert({
       user_id: user.id,
       assignment_id: assignmentId,
       event_type: eventType,
       details,
-    }]);
+    });
   };
 
   const handleAutoSubmit = useCallback(() => {
@@ -314,8 +314,7 @@ export default function QuizPage() {
   const completeQuiz = async () => {
     if (!assignmentId) return;
 
-    await supabase
-      .from('quiz_assignments')
+    await (supabase.from('quiz_assignments') as any)
       .update({
         is_completed: true,
         completed_at: new Date().toISOString(),

@@ -322,8 +322,7 @@ export default function AdminDashboard() {
     };
 
     if (editingQuiz) {
-      const { error } = await supabase
-        .from('quizzes')
+      const { error } = await (supabase.from('quizzes') as any)
         .update(quizData)
         .eq('id', editingQuiz.id);
 
@@ -334,8 +333,7 @@ export default function AdminDashboard() {
         fetchQuizzes();
       }
     } else {
-      const { error } = await supabase
-        .from('quizzes')
+      const { error } = await (supabase.from('quizzes') as any)
         .insert([quizData]);
 
       if (error) {
@@ -382,8 +380,7 @@ export default function AdminDashboard() {
     };
 
     if (editingQuestion) {
-      const { error } = await supabase
-        .from('questions')
+      const { error } = await (supabase.from('questions') as any)
         .update(questionData)
         .eq('id', editingQuestion.id);
 
@@ -394,8 +391,7 @@ export default function AdminDashboard() {
         fetchQuestions(selectedQuiz.id);
       }
     } else {
-      const { error } = await supabase
-        .from('questions')
+      const { error } = await (supabase.from('questions') as any)
         .insert([questionData]);
 
       if (error) {
@@ -434,8 +430,7 @@ export default function AdminDashboard() {
       user_id: userId,
     }));
 
-    const { error } = await supabase
-      .from('quiz_assignments')
+    const { error } = await (supabase.from('quiz_assignments') as any)
       .upsert(assignments, { onConflict: 'quiz_id,user_id' });
 
     if (error) {
