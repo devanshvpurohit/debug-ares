@@ -1,73 +1,52 @@
-# Welcome to your Lovable project
+# 🟢 DEBUG ARENA - MATRIX EDITION
 
-## Project info
+An immersive, multi-language code debugging platform built with React, Vite, Supabase, and a futuristic Matrix-inspired aesthetic.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## 🌌 Features
 
-## How can I edit this code?
+- **Matrix Aesthetics**: Immersive green-on-black UI with falling digital rain animations, cyber-borders, and scanline effects.
+- **Enhanced Admin IDE**: A professional-grade online IDE (powered by Monaco Editor) for creating and managing debugging challenges.
+- **Multi-Language Support**: Debug challenges in JavaScript, Python, Java, C++, Go, C#, and Ruby.
+- **Anti-Cheat System**: Real-time detection of tab switching and clipboard usage to ensure fair play.
+- **Real-time Leaderboard**: Track ranks and performance in a neon-glow podium environment.
+- **Supabase Powered**: Robust authentication and real-time database integration.
 
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 🛠️ Quick Start
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Clone the repository
+git clone https://github.com/devanshvpurohit/debug-ares.git
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🔐 Supabase Configuration
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+To get the platform fully operational, you need to set up your Supabase project:
 
-**Use GitHub Codespaces**
+1. **Database Schema**:
+   - Run the contents of `supabase-schema.sql` in your Supabase SQL Editor.
+   
+2. **Admin Setup**:
+   - Sign up through the application with your desired admin email.
+   - Run the following SQL to grant admin privileges:
+     ```sql
+     INSERT INTO public.user_roles (user_id, role)
+     SELECT id, 'admin' FROM auth.users WHERE email = 'YOUR_EMAIL';
+     ```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🚀 Technologies
 
-## What technologies are used for this project?
+- **Frontend**: React 18, Vite, TypeScript
+- **Styling**: Tailwind CSS, Lucide Icons, Custom Matrix CSS
+- **IDE Engine**: Monaco Editor
+- **Backend**: Supabase (Auth, PostgreSQL, RLS)
+- **UI Components**: Shadcn UI
 
-This project is built with:
+---
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+*</> DEBUG ARENA v2.0 | MATRIX EDITION </>*
