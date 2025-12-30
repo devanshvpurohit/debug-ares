@@ -146,6 +146,14 @@ export default function Dashboard() {
               <Trophy className="w-4 h-4 mr-2" />
               Leaderboard
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/playground')}
+              className="font-mono border-matrix-green/30 hover:border-matrix-green hover:bg-matrix-green/10 text-matrix-green hover:text-matrix-green transition-all duration-300"
+            >
+              <Terminal className="w-4 h-4 mr-2" />
+              Sandbox
+            </Button>
             <div className="text-sm text-matrix-green/60 font-mono hidden md:flex items-center gap-2">
               <Cpu className="w-4 h-4 animate-pulse" />
               {user?.email}
@@ -195,9 +203,17 @@ export default function Dashboard() {
               <h3 className="text-xl font-semibold text-matrix-green mb-2 font-matrix tracking-wide">
                 No Challenges Assigned
               </h3>
-              <p className="text-matrix-green/50 text-center font-mono text-sm">
-                [AWAITING] Wait for an admin to assign you a debugging challenge.
+              <p className="text-matrix-green/50 text-center font-mono text-sm max-w-md mb-8">
+                [AWAITING] Wait for an admin to assign you a debugging challenge, or sharpen your skills in the sandbox.
               </p>
+              <Button
+                variant="outline"
+                onClick={() => navigate('/playground')}
+                className="font-mono border-matrix-green/50 text-matrix-green hover:bg-matrix-green/20"
+              >
+                <Terminal className="w-4 h-4 mr-2" />
+                ENTER_CODE_SANDBOX
+              </Button>
             </CardContent>
           </Card>
         ) : (
