@@ -22,6 +22,7 @@ interface LeaderboardEntry {
   correct_count: number;
   total_time: number;
   total_questions: number;
+  score: number;
 }
 
 // Matrix rain background component
@@ -135,7 +136,28 @@ export default function Leaderboard() {
       return a.total_time - b.total_time;
     });
 
-    setLeaderboard(sorted);
+    // Apply scoring: 1st = 50pts, 2nd = 30pts, 3rd = 10pts per quiz
+    // Plus bonus points for each correct answer
+    const scored = sorted.map((entry, idx) => {
+      let positionScore = 0;
+      if (idx === 0) positionScore = 50;
+      else if (idx === 1) positionScore = 30;
+      else if (idx === 2) positionScore = 10;
+
+      // Bonus points: 5 points per correct answer
+      const correctBonus = entry.correct_count * 5;
+
+      // Speed bonus: up to 20 points based on avg time per question
+      const avgTime = entry.total_questions > 0 ? entry.total_time / entry.total_questions : 999;
+      const speedBonus = Math.max(0, Math.round(20 - avgTime / 6)); // ~2min avg = 0 bonus, faster = more
+
+      return {
+        ...entry,
+        score: positionScore + correctBonus + speedBonus
+      };
+    });
+
+    setLeaderboard(scored);
     setLoading(false);
   };
 
@@ -260,8 +282,13 @@ export default function Leaderboard() {
                         </p>
                         <div className="mt-3 space-y-1">
                           <div className="flex items-center justify-center gap-1 text-matrix-green">
+                            <Trophy className="w-4 h-4" />
+                            <span className="font-mono font-bold text-lg text-glow">{entry.score}</span>
+                            <span className="text-xs">pts</span>
+                          </div>
+                          <div className="flex items-center justify-center gap-1 text-matrix-green/70">
                             <Target className="w-4 h-4" />
-                            <span className="font-mono text-glow">{entry.correct_count}</span>
+                            <span className="font-mono text-glow">{entry.correct_count}/{entry.total_questions}</span>
                           </div>
                           <div className="flex items-center justify-center gap-1 text-matrix-green/50 text-sm">
                             <Clock className="w-3 h-3" />
@@ -289,8 +316,8 @@ export default function Leaderboard() {
                     <TableRow className="border-matrix-green/20 hover:bg-transparent">
                       <TableHead className="font-mono w-16 text-matrix-green/70">Rank</TableHead>
                       <TableHead className="font-mono text-matrix-green/70">Player</TableHead>
-                      <TableHead className="font-mono text-center text-matrix-green/70">Correct</TableHead>
-                      <TableHead className="font-mono text-center text-matrix-green/70">Total</TableHead>
+                      <TableHead className="font-mono text-center text-matrix-green/70">Score</TableHead>
+                      <TableHead className="font-mono text-center text-matrix-green/70">Solved</TableHead>
                       <TableHead className="font-mono text-center text-matrix-green/70">Accuracy</TableHead>
                       <TableHead className="font-mono text-right text-matrix-green/70">Time</TableHead>
                     </TableRow>
@@ -321,11 +348,15 @@ export default function Leaderboard() {
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-matrix-green font-bold text-glow">
-                          {entry.correct_count}
+                        <TableCell className="text-center">
+                          <span className="font-mono font-bold text-matrix-green text-lg text-glow">
+                            {entry.score}
+                          </span>
+                          <span className="text-xs text-matrix-green/50 ml-1">pts</span>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-matrix-green/60">
-                          {entry.total_questions}
+                        <TableCell className="text-center font-mono text-matrix-green">
+                          <span className="font-bold text-glow">{entry.correct_count}</span>
+                          <span className="text-matrix-green/50">/{entry.total_questions}</span>
                         </TableCell>
                         <TableCell className="text-center">
                           <Badge
