@@ -919,8 +919,8 @@ export default function AdminDashboard() {
                             key={quiz.id}
                             onClick={() => setSelectedQuiz(quiz)}
                             className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedQuiz?.id === quiz.id
-                                ? 'border-matrix-green bg-matrix-green/10'
-                                : 'border-matrix-green/20 hover:border-matrix-green/40'
+                              ? 'border-matrix-green bg-matrix-green/10'
+                              : 'border-matrix-green/20 hover:border-matrix-green/40'
                               }`}
                           >
                             <div className="flex items-center justify-between">
@@ -938,11 +938,25 @@ export default function AdminDashboard() {
 
                 {/* User Selection */}
                 <Card className="glass-effect border-matrix-green/20 bg-black/80">
-                  <CardHeader>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
                     <CardTitle className="font-matrix text-matrix-green flex items-center gap-2">
                       <Users className="w-5 h-5" />
                       Select Users ({selectedUsers.length} selected)
                     </CardTitle>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (selectedUsers.length === users.length) {
+                          setSelectedUsers([]);
+                        } else {
+                          setSelectedUsers(users.map(u => u.id));
+                        }
+                      }}
+                      className="text-xs h-7 border-matrix-green/30 text-matrix-green hover:bg-matrix-green/10 font-mono"
+                    >
+                      {selectedUsers.length === users.length ? 'DESELECT_ALL' : 'SELECT_ALL'}
+                    </Button>
                   </CardHeader>
                   <CardContent>
                     <ScrollArea className="h-[300px] pr-4">
@@ -951,8 +965,8 @@ export default function AdminDashboard() {
                           <label
                             key={u.id}
                             className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${selectedUsers.includes(u.id)
-                                ? 'border-matrix-green bg-matrix-green/10'
-                                : 'border-matrix-green/20 hover:border-matrix-green/40'
+                              ? 'border-matrix-green bg-matrix-green/10'
+                              : 'border-matrix-green/20 hover:border-matrix-green/40'
                               }`}
                           >
                             <input
