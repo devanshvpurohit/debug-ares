@@ -6,8 +6,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Trophy, Clock, Target, Bug, Medal } from 'lucide-react';
-import type { Quiz, ProgrammingLanguage } from '@/types/database';
+import { ArrowLeft, Trophy, Clock, Target, Medal } from 'lucide-react';
+
+interface Quiz {
+  id: string;
+  title: string;
+  language: string;
+  is_active: boolean;
+}
 
 interface LeaderboardEntry {
   user_id: string;
@@ -40,7 +46,7 @@ export default function Leaderboard() {
       .eq('is_active', true)
       .order('title');
     
-    setQuizzes(data || []);
+    setQuizzes((data as Quiz[]) || []);
   };
 
   const fetchLeaderboard = async () => {
@@ -72,10 +78,9 @@ export default function Leaderboard() {
       return;
     }
 
-    // Aggregate by user
     const userStats: Record<string, LeaderboardEntry> = {};
 
-    data?.forEach((submission: any) => {
+    (data as any[])?.forEach((submission) => {
       const userId = submission.assignment.user_id;
       const profile = submission.assignment.profile;
 
@@ -97,7 +102,6 @@ export default function Leaderboard() {
       }
     });
 
-    // Sort by correct count (desc), then by time (asc)
     const sorted = Object.values(userStats).sort((a, b) => {
       if (b.correct_count !== a.correct_count) {
         return b.correct_count - a.correct_count;
@@ -125,18 +129,20 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background obsidian-gradient">
       <div className="absolute inset-0 scanline pointer-events-none opacity-30" />
       
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <div className="absolute top-40 left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-40 right-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
+      
+      <header className="border-b border-border/50 glass-effect sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
+              <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
                 <Trophy className="w-6 h-6 text-primary" />
               </div>
               <span className="text-xl font-bold text-foreground font-mono">
@@ -146,7 +152,7 @@ export default function Leaderboard() {
           </div>
           
           <Select value={selectedQuiz} onValueChange={setSelectedQuiz}>
-            <SelectTrigger className="w-48 bg-background/50 font-mono">
+            <SelectTrigger className="w-48 bg-background/50 font-mono border-primary/30">
               <SelectValue placeholder="Filter by quiz" />
             </SelectTrigger>
             <SelectContent>
@@ -161,13 +167,13 @@ export default function Leaderboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <div className="text-primary font-mono animate-pulse">Loading rankings...</div>
           </div>
         ) : leaderboard.length === 0 ? (
-          <Card className="terminal-bg border-border/50">
+          <Card className="glass-effect border-border/50">
             <CardContent className="flex flex-col items-center py-20">
               <Trophy className="w-16 h-16 text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold text-foreground mb-2 font-mono">
@@ -180,7 +186,6 @@ export default function Leaderboard() {
           </Card>
         ) : (
           <>
-            {/* Top 3 Podium */}
             {leaderboard.length >= 3 && (
               <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
                 {[1, 0, 2].map((position) => {
@@ -190,7 +195,7 @@ export default function Leaderboard() {
                   return (
                     <Card
                       key={entry.user_id}
-                      className={`terminal-bg border-border/50 ${position === 0 ? 'transform -translate-y-4 border-primary/50 border-glow' : ''}`}
+                      className={`glass-effect border-border/50 ${position === 0 ? 'transform -translate-y-4 border-primary/50 border-glow' : ''}`}
                     >
                       <CardContent className="pt-6 text-center">
                         <Medal className={`w-10 h-10 mx-auto mb-2 ${getMedalColor(position)}`} />
@@ -217,8 +222,7 @@ export default function Leaderboard() {
               </div>
             )}
 
-            {/* Full Rankings Table */}
-            <Card className="terminal-bg border-border/50">
+            <Card className="glass-effect border-border/50">
               <CardHeader>
                 <CardTitle className="font-mono text-foreground">
                   <span className="text-primary">&gt;</span> Full Rankings

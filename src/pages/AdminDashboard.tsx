@@ -13,7 +13,36 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Trash2, Edit, Users, FileCode, Eye, Bug } from 'lucide-react';
-import type { Quiz, Question, Profile, ProgrammingLanguage } from '@/types/database';
+
+interface Quiz {
+  id: string;
+  title: string;
+  description: string | null;
+  time_per_question: number;
+  language: string;
+  is_active: boolean;
+  created_by: string;
+  created_at: string;
+}
+
+interface Question {
+  id: string;
+  quiz_id: string;
+  title: string;
+  incorrect_code: string;
+  correct_code: string;
+  expected_output: string;
+  language: string;
+  order_index: number;
+}
+
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string | null;
+}
+
+type ProgrammingLanguage = 'java' | 'python' | 'cpp' | 'javascript' | 'go' | 'csharp' | 'ruby';
 
 const LANGUAGES: { value: ProgrammingLanguage; label: string }[] = [
   { value: 'java', label: 'Java' },
@@ -36,7 +65,6 @@ export default function AdminDashboard() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   
-  // Quiz form state
   const [quizTitle, setQuizTitle] = useState('');
   const [quizDescription, setQuizDescription] = useState('');
   const [quizLanguage, setQuizLanguage] = useState<ProgrammingLanguage>('java');
@@ -44,7 +72,6 @@ export default function AdminDashboard() {
   const [isQuizDialogOpen, setIsQuizDialogOpen] = useState(false);
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   
-  // Question form state
   const [questionTitle, setQuestionTitle] = useState('');
   const [incorrectCode, setIncorrectCode] = useState('');
   const [correctCode, setCorrectCode] = useState('');
@@ -52,7 +79,6 @@ export default function AdminDashboard() {
   const [isQuestionDialogOpen, setIsQuestionDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   
-  // Assignment state
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
@@ -76,7 +102,7 @@ export default function AdminDashboard() {
     if (error) {
       console.error('Error fetching quizzes:', error);
     } else {
-      setQuizzes(data || []);
+      setQuizzes((data as Quiz[]) || []);
     }
     setLoading(false);
   };
@@ -90,7 +116,7 @@ export default function AdminDashboard() {
     if (error) {
       console.error('Error fetching users:', error);
     } else {
-      setUsers(data || []);
+      setUsers((data as Profile[]) || []);
     }
   };
 
@@ -104,7 +130,7 @@ export default function AdminDashboard() {
     if (error) {
       console.error('Error fetching questions:', error);
     } else {
-      setQuestions(data || []);
+      setQuestions((data as Question[]) || []);
     }
   };
 
@@ -134,7 +160,7 @@ export default function AdminDashboard() {
     } else {
       const { error } = await supabase
         .from('quizzes')
-        .insert(quizData);
+        .insert([quizData]);
       
       if (error) {
         toast({ title: 'Error', description: 'Failed to create quiz', variant: 'destructive' });
@@ -194,7 +220,7 @@ export default function AdminDashboard() {
     } else {
       const { error } = await supabase
         .from('questions')
-        .insert(questionData);
+        .insert([questionData]);
       
       if (error) {
         toast({ title: 'Error', description: 'Failed to create question', variant: 'destructive' });
@@ -265,7 +291,7 @@ export default function AdminDashboard() {
     setEditingQuiz(quiz);
     setQuizTitle(quiz.title);
     setQuizDescription(quiz.description || '');
-    setQuizLanguage(quiz.language);
+    setQuizLanguage(quiz.language as ProgrammingLanguage);
     setTimePerQuestion(quiz.time_per_question);
     setIsQuizDialogOpen(true);
   };
@@ -280,18 +306,17 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background">
+    <div className="dark min-h-screen bg-background obsidian-gradient">
       <div className="absolute inset-0 scanline pointer-events-none opacity-30" />
       
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border/50 glass-effect sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 border border-primary/30">
+              <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
                 <Bug className="w-6 h-6 text-primary" />
               </div>
               <span className="text-xl font-bold text-foreground font-mono">
@@ -302,14 +327,14 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 relative z-10">
         <Tabs defaultValue="quizzes" className="w-full">
           <TabsList className="bg-muted/50 mb-6">
-            <TabsTrigger value="quizzes" className="font-mono">
+            <TabsTrigger value="quizzes" className="font-mono data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileCode className="w-4 h-4 mr-2" />
               Quizzes
             </TabsTrigger>
-            <TabsTrigger value="questions" className="font-mono" disabled={!selectedQuiz}>
+            <TabsTrigger value="questions" className="font-mono data-[state=active]:bg-primary data-[state=active]:text-primary-foreground" disabled={!selectedQuiz}>
               <Edit className="w-4 h-4 mr-2" />
               Questions {selectedQuiz && `(${selectedQuiz.title})`}
             </TabsTrigger>
@@ -325,14 +350,14 @@ export default function AdminDashboard() {
                 if (!open) resetQuizForm();
               }}>
                 <DialogTrigger asChild>
-                  <Button className="font-mono">
+                  <Button className="font-mono bg-primary hover:bg-primary/90">
                     <Plus className="w-4 h-4 mr-2" />
                     New Quiz
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-card border-border">
+                <DialogContent className="glass-effect border-primary/20">
                   <DialogHeader>
-                    <DialogTitle className="font-mono">
+                    <DialogTitle className="font-mono text-foreground">
                       {editingQuiz ? 'Edit Quiz' : 'Create New Quiz'}
                     </DialogTitle>
                     <DialogDescription>
@@ -341,28 +366,28 @@ export default function AdminDashboard() {
                   </DialogHeader>
                   <div className="space-y-4 mt-4">
                     <div className="space-y-2">
-                      <Label className="font-mono">Title</Label>
+                      <Label className="font-mono text-foreground">Title</Label>
                       <Input
                         value={quizTitle}
                         onChange={(e) => setQuizTitle(e.target.value)}
                         placeholder="Quiz title"
-                        className="bg-background/50"
+                        className="bg-background/50 border-primary/30"
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-mono">Description</Label>
+                      <Label className="font-mono text-foreground">Description</Label>
                       <Textarea
                         value={quizDescription}
                         onChange={(e) => setQuizDescription(e.target.value)}
                         placeholder="Quiz description"
-                        className="bg-background/50"
+                        className="bg-background/50 border-primary/30"
                       />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label className="font-mono">Language</Label>
+                        <Label className="font-mono text-foreground">Language</Label>
                         <Select value={quizLanguage} onValueChange={(v) => setQuizLanguage(v as ProgrammingLanguage)}>
-                          <SelectTrigger className="bg-background/50">
+                          <SelectTrigger className="bg-background/50 border-primary/30">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -375,16 +400,16 @@ export default function AdminDashboard() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label className="font-mono">Time/Question (s)</Label>
+                        <Label className="font-mono text-foreground">Time/Question (s)</Label>
                         <Input
                           type="number"
                           value={timePerQuestion}
                           onChange={(e) => setTimePerQuestion(Number(e.target.value))}
-                          className="bg-background/50"
+                          className="bg-background/50 border-primary/30"
                         />
                       </div>
                     </div>
-                    <Button onClick={handleCreateQuiz} className="w-full font-mono">
+                    <Button onClick={handleCreateQuiz} className="w-full font-mono bg-primary hover:bg-primary/90">
                       {editingQuiz ? 'Update Quiz' : 'Create Quiz'}
                     </Button>
                   </div>
@@ -395,7 +420,7 @@ export default function AdminDashboard() {
             {loading ? (
               <div className="text-center py-10 text-muted-foreground font-mono">Loading...</div>
             ) : quizzes.length === 0 ? (
-              <Card className="terminal-bg border-border/50">
+              <Card className="glass-effect border-border/50">
                 <CardContent className="flex flex-col items-center py-10">
                   <FileCode className="w-12 h-12 text-muted-foreground mb-4" />
                   <p className="text-muted-foreground font-mono">No quizzes created yet</p>
@@ -404,17 +429,17 @@ export default function AdminDashboard() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {quizzes.map((quiz) => (
-                  <Card key={quiz.id} className="terminal-bg border-border/50 hover:border-primary/50 transition-colors">
+                  <Card key={quiz.id} className="glass-effect border-border/50 hover:border-primary/50 transition-all duration-300">
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
-                        <Badge variant="outline" className="mb-2">
+                        <Badge variant="outline" className="mb-2 border-primary/30 text-primary">
                           {quiz.language.toUpperCase()}
                         </Badge>
                         <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEditQuiz(quiz)}>
+                          <Button variant="ghost" size="icon" onClick={() => openEditQuiz(quiz)} className="hover:bg-primary/10">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => handleDeleteQuiz(quiz.id)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteQuiz(quiz.id)} className="hover:bg-destructive/10">
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
@@ -430,7 +455,7 @@ export default function AdminDashboard() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1 font-mono"
+                          className="flex-1 font-mono border-primary/30 hover:bg-primary/10"
                           onClick={() => setSelectedQuiz(quiz)}
                         >
                           <Eye className="w-4 h-4 mr-1" />
@@ -441,14 +466,14 @@ export default function AdminDashboard() {
                           if (open) setSelectedQuiz(quiz);
                         }}>
                           <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="flex-1 font-mono">
+                            <Button variant="outline" size="sm" className="flex-1 font-mono border-primary/30 hover:bg-primary/10">
                               <Users className="w-4 h-4 mr-1" />
                               Assign
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="bg-card border-border">
+                          <DialogContent className="glass-effect border-primary/20">
                             <DialogHeader>
-                              <DialogTitle className="font-mono">Assign Quiz</DialogTitle>
+                              <DialogTitle className="font-mono text-foreground">Assign Quiz</DialogTitle>
                               <DialogDescription>
                                 Select users to assign this quiz to
                               </DialogDescription>
@@ -457,7 +482,7 @@ export default function AdminDashboard() {
                               {users.map((u) => (
                                 <label
                                   key={u.id}
-                                  className="flex items-center gap-2 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                                  className="flex items-center gap-2 p-2 rounded hover:bg-primary/10 cursor-pointer"
                                 >
                                   <input
                                     type="checkbox"
@@ -469,13 +494,13 @@ export default function AdminDashboard() {
                                         setSelectedUsers(selectedUsers.filter(id => id !== u.id));
                                       }
                                     }}
-                                    className="rounded"
+                                    className="rounded accent-primary"
                                   />
                                   <span className="font-mono text-sm">{u.email}</span>
                                 </label>
                               ))}
                             </div>
-                            <Button onClick={handleAssignQuiz} className="w-full font-mono">
+                            <Button onClick={handleAssignQuiz} className="w-full font-mono bg-primary hover:bg-primary/90">
                               Assign to {selectedUsers.length} user(s)
                             </Button>
                           </DialogContent>
@@ -505,55 +530,55 @@ export default function AdminDashboard() {
                     if (!open) resetQuestionForm();
                   }}>
                     <DialogTrigger asChild>
-                      <Button className="font-mono">
+                      <Button className="font-mono bg-primary hover:bg-primary/90">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Question
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="bg-card border-border max-w-2xl">
+                    <DialogContent className="glass-effect border-primary/20 max-w-2xl">
                       <DialogHeader>
-                        <DialogTitle className="font-mono">
+                        <DialogTitle className="font-mono text-foreground">
                           {editingQuestion ? 'Edit Question' : 'Add Question'}
                         </DialogTitle>
                       </DialogHeader>
                       <div className="space-y-4 mt-4">
                         <div className="space-y-2">
-                          <Label className="font-mono">Question Title</Label>
+                          <Label className="font-mono text-foreground">Question Title</Label>
                           <Input
                             value={questionTitle}
                             onChange={(e) => setQuestionTitle(e.target.value)}
                             placeholder="Fix the array index error"
-                            className="bg-background/50"
+                            className="bg-background/50 border-primary/30"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-mono">Incorrect Code (with bug)</Label>
+                          <Label className="font-mono text-foreground">Incorrect Code (with bug)</Label>
                           <Textarea
                             value={incorrectCode}
                             onChange={(e) => setIncorrectCode(e.target.value)}
                             placeholder="Paste the buggy code here..."
-                            className="bg-background/50 font-mono min-h-32"
+                            className="bg-background/50 border-primary/30 font-mono min-h-32"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-mono">Correct Code (solution)</Label>
+                          <Label className="font-mono text-foreground">Correct Code (solution)</Label>
                           <Textarea
                             value={correctCode}
                             onChange={(e) => setCorrectCode(e.target.value)}
                             placeholder="Paste the correct solution here..."
-                            className="bg-background/50 font-mono min-h-32"
+                            className="bg-background/50 border-primary/30 font-mono min-h-32"
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-mono">Expected Output</Label>
+                          <Label className="font-mono text-foreground">Expected Output</Label>
                           <Textarea
                             value={expectedOutput}
                             onChange={(e) => setExpectedOutput(e.target.value)}
                             placeholder="What should the code output?"
-                            className="bg-background/50 font-mono"
+                            className="bg-background/50 border-primary/30 font-mono"
                           />
                         </div>
-                        <Button onClick={handleCreateQuestion} className="w-full font-mono">
+                        <Button onClick={handleCreateQuestion} className="w-full font-mono bg-primary hover:bg-primary/90">
                           {editingQuestion ? 'Update Question' : 'Add Question'}
                         </Button>
                       </div>
@@ -562,7 +587,7 @@ export default function AdminDashboard() {
                 </div>
 
                 {questions.length === 0 ? (
-                  <Card className="terminal-bg border-border/50">
+                  <Card className="glass-effect border-border/50">
                     <CardContent className="flex flex-col items-center py-10">
                       <FileCode className="w-12 h-12 text-muted-foreground mb-4" />
                       <p className="text-muted-foreground font-mono">No questions added yet</p>
@@ -571,11 +596,11 @@ export default function AdminDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {questions.map((question, index) => (
-                      <Card key={question.id} className="terminal-bg border-border/50">
+                      <Card key={question.id} className="glass-effect border-border/50">
                         <CardHeader className="pb-2">
                           <div className="flex items-start justify-between">
                             <div>
-                              <Badge variant="outline" className="mb-2">
+                              <Badge variant="outline" className="mb-2 border-primary/30 text-primary">
                                 Q{index + 1}
                               </Badge>
                               <CardTitle className="font-mono text-foreground text-lg">
@@ -583,10 +608,10 @@ export default function AdminDashboard() {
                               </CardTitle>
                             </div>
                             <div className="flex gap-1">
-                              <Button variant="ghost" size="icon" onClick={() => openEditQuestion(question)}>
+                              <Button variant="ghost" size="icon" onClick={() => openEditQuestion(question)} className="hover:bg-primary/10">
                                 <Edit className="w-4 h-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(question.id)}>
+                              <Button variant="ghost" size="icon" onClick={() => handleDeleteQuestion(question.id)} className="hover:bg-destructive/10">
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
                             </div>
@@ -596,13 +621,13 @@ export default function AdminDashboard() {
                           <div className="grid grid-cols-2 gap-4">
                             <div>
                               <p className="text-xs text-muted-foreground font-mono mb-1">BUGGY CODE</p>
-                              <pre className="bg-background/50 p-2 rounded text-xs overflow-x-auto max-h-24">
+                              <pre className="bg-background/50 p-2 rounded text-xs overflow-x-auto max-h-24 border border-border/30">
                                 {question.incorrect_code.slice(0, 200)}...
                               </pre>
                             </div>
                             <div>
                               <p className="text-xs text-muted-foreground font-mono mb-1">EXPECTED OUTPUT</p>
-                              <pre className="bg-background/50 p-2 rounded text-xs overflow-x-auto max-h-24">
+                              <pre className="bg-background/50 p-2 rounded text-xs overflow-x-auto max-h-24 border border-border/30">
                                 {question.expected_output}
                               </pre>
                             </div>

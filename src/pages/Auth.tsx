@@ -97,17 +97,21 @@ export default function Auth() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="dark min-h-screen bg-background flex items-center justify-center p-4 obsidian-gradient">
       <div className="absolute inset-0 scanline pointer-events-none opacity-50" />
+      
+      {/* Floating orbs */}
+      <div className="absolute top-20 left-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-20 right-20 w-96 h-96 bg-accent/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '1s' }} />
       
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-3 mb-4">
-            <div className="p-3 rounded-lg bg-primary/10 border border-primary/30 border-glow">
-              <Bug className="w-8 h-8 text-primary text-glow" />
+            <div className="p-3 rounded-xl bg-primary/20 border border-primary/40 border-glow animate-pulse-glow">
+              <Bug className="w-8 h-8 text-primary" />
             </div>
             <h1 className="text-3xl font-bold text-foreground text-glow font-mono">
-              DEBUG<span className="text-primary">_</span>CHALLENGE
+              DEBUG<span className="text-primary">_</span>ARENA
             </h1>
           </div>
           <p className="text-muted-foreground font-mono text-sm">
@@ -116,7 +120,7 @@ export default function Auth() {
           </p>
         </div>
 
-        <Card className="terminal-bg border-primary/20 border-glow">
+        <Card className="glass-effect border-primary/20 border-glow">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-2 text-primary font-mono text-xs mb-2">
               <span className="animate-blink">▌</span>
@@ -130,11 +134,11 @@ export default function Auth() {
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50">
-                <TabsTrigger value="signin" className="font-mono">
+                <TabsTrigger value="signin" className="font-mono data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Code2 className="w-4 h-4 mr-2" />
                   Sign In
                 </TabsTrigger>
-                <TabsTrigger value="signup" className="font-mono">
+                <TabsTrigger value="signup" className="font-mono data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                   <Shield className="w-4 h-4 mr-2" />
                   Sign Up
                 </TabsTrigger>
@@ -172,7 +176,7 @@ export default function Auth() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full font-mono"
+                    className="w-full font-mono bg-primary hover:bg-primary/90"
                     disabled={loading}
                   >
                     {loading ? '> AUTHENTICATING...' : '> EXECUTE LOGIN'}
@@ -225,7 +229,7 @@ export default function Auth() {
                   </div>
                   <Button
                     type="submit"
-                    className="w-full font-mono"
+                    className="w-full font-mono bg-primary hover:bg-primary/90"
                     disabled={loading}
                   >
                     {loading ? '> CREATING ACCOUNT...' : '> REGISTER NEW USER'}
@@ -237,7 +241,7 @@ export default function Auth() {
         </Card>
 
         <p className="text-center text-muted-foreground text-xs mt-6 font-mono">
-          &lt;/&gt; Debug Code Challenge Platform v1.0
+          &lt;/&gt; Debug Arena v1.0 | Obsidian Edition
         </p>
       </div>
     </div>

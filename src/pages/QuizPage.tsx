@@ -8,10 +8,37 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
-import { AlertTriangle, Clock, ChevronRight, Bug, CheckCircle, XCircle } from 'lucide-react';
-import type { Quiz, Question, QuizAssignment, QuestionOrder, ProgrammingLanguage } from '@/types/database';
+import { AlertTriangle, Clock, ChevronRight, Bug, CheckCircle } from 'lucide-react';
 
-const languageToMonaco: Record<ProgrammingLanguage, string> = {
+interface Quiz {
+  id: string;
+  title: string;
+  description: string | null;
+  time_per_question: number;
+  language: string;
+}
+
+interface Question {
+  id: string;
+  quiz_id: string;
+  title: string;
+  incorrect_code: string;
+  correct_code: string;
+  expected_output: string;
+  language: string;
+  order_index: number;
+}
+
+interface QuizAssignment {
+  id: string;
+  quiz_id: string;
+  user_id: string;
+  is_completed: boolean;
+  started_at: string | null;
+  completed_at: string | null;
+}
+
+const languageToMonaco: Record<string, string> = {
   java: 'java',
   python: 'python',
   cpp: 'cpp',
@@ -23,9 +50,9 @@ const languageToMonaco: Record<ProgrammingLanguage, string> = {
 
 function normalizeCode(code: string): string {
   return code
-    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '') // Remove comments
-    .replace(/\s+/g, ' ') // Normalize whitespace
-    .replace(/\s*([{}();,])\s*/g, '$1') // Remove spaces around punctuation
+    .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([{}();,])\s*/g, '$1')
     .trim()
     .toLowerCase();
 }
@@ -53,14 +80,12 @@ export default function QuizPage() {
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  // Fetch quiz data
   useEffect(() => {
     if (assignmentId) {
       fetchQuizData();
     }
   }, [assignmentId]);
 
-  // Timer effect
   useEffect(() => {
     if (!loading && !quizCompleted && currentQuestion) {
       questionStartTime.current = Date.now();
@@ -82,7 +107,6 @@ export default function QuizPage() {
     }
   }, [currentQuestionIndex, loading, quizCompleted, currentQuestion]);
 
-  // Anti-cheat: Tab visibility
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden && !quizCompleted && currentQuestion) {
@@ -100,9 +124,8 @@ export default function QuizPage() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [quizCompleted, currentQuestion]);
 
-  // Anti-cheat: Prevent back navigation
   useEffect(() => {
-    const handlePopState = (e: PopStateEvent) => {
+    const handlePopState = () => {
       if (!quizCompleted) {
         window.history.pushState(null, '', window.location.href);
         toast({
@@ -118,7 +141,6 @@ export default function QuizPage() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, [quizCompleted]);
 
-  // Anti-cheat: Prevent copy/paste in editor
   const handleEditorMount = (editor: any) => {
     editor.onKeyDown((e: any) => {
       if ((e.ctrlKey || e.metaKey) && (e.keyCode === 67 || e.keyCode === 86)) {
@@ -136,7 +158,6 @@ export default function QuizPage() {
   const fetchQuizData = async () => {
     if (!assignmentId || !user) return;
 
-    // Fetch assignment with quiz
     const { data: assignmentData, error: assignmentError } = await supabase
       .from('quiz_assignments')
       .select('*')
@@ -150,29 +171,30 @@ export default function QuizPage() {
       return;
     }
 
-    if (assignmentData.is_completed) {
+    const typedAssignment = assignmentData as QuizAssignment;
+
+    if (typedAssignment.is_completed) {
       setQuizCompleted(true);
-      setAssignment(assignmentData);
+      setAssignment(typedAssignment);
       await fetchResults();
       setLoading(false);
       return;
     }
 
-    setAssignment(assignmentData);
+    setAssignment(typedAssignment);
 
-    // Fetch quiz
     const { data: quizData } = await supabase
       .from('quizzes')
       .select('*')
-      .eq('id', assignmentData.quiz_id)
+      .eq('id', typedAssignment.quiz_id)
       .single();
 
     if (quizData) {
-      setQuiz(quizData);
-      setTimeLeft(quizData.time_per_question);
+      const typedQuiz = quizData as Quiz;
+      setQuiz(typedQuiz);
+      setTimeLeft(typedQuiz.time_per_question);
     }
 
-    // Check for existing question order or create new one
     const { data: orderData } = await supabase
       .from('question_orders')
       .select('*, question:questions(*)')
@@ -185,13 +207,12 @@ export default function QuizPage() {
         .filter(Boolean) as Question[];
       setQuestions(orderedQuestions);
       
-      // Find the first unanswered question
       const { data: submissions } = await supabase
         .from('submissions')
         .select('question_id')
         .eq('assignment_id', assignmentId);
       
-      const answeredIds = new Set(submissions?.map(s => s.question_id) || []);
+      const answeredIds = new Set((submissions as any[] || []).map(s => s.question_id));
       const nextIndex = orderedQuestions.findIndex(q => !answeredIds.has(q.id));
       setCurrentQuestionIndex(nextIndex === -1 ? orderedQuestions.length : nextIndex);
       
@@ -199,17 +220,15 @@ export default function QuizPage() {
         await completeQuiz();
       }
     } else {
-      // Fetch and randomize questions
       const { data: questionsData } = await supabase
         .from('questions')
         .select('*')
-        .eq('quiz_id', assignmentData.quiz_id);
+        .eq('quiz_id', typedAssignment.quiz_id);
 
       if (questionsData) {
-        const shuffled = [...questionsData].sort(() => Math.random() - 0.5);
+        const shuffled = [...(questionsData as Question[])].sort(() => Math.random() - 0.5);
         setQuestions(shuffled);
 
-        // Save question order
         const orders = shuffled.map((q, idx) => ({
           assignment_id: assignmentId,
           question_id: q.id,
@@ -218,7 +237,6 @@ export default function QuizPage() {
 
         await supabase.from('question_orders').insert(orders);
 
-        // Mark as started
         await supabase
           .from('quiz_assignments')
           .update({ started_at: new Date().toISOString() })
@@ -242,20 +260,21 @@ export default function QuizPage() {
       .eq('assignment_id', assignmentId);
 
     if (submissions) {
-      const correct = submissions.filter(s => s.is_correct).length;
-      setResults({ correct, total: submissions.length });
+      const typedSubmissions = submissions as { is_correct: boolean }[];
+      const correct = typedSubmissions.filter(s => s.is_correct).length;
+      setResults({ correct, total: typedSubmissions.length });
     }
   };
 
   const logCheatEvent = async (eventType: string, details: string) => {
     if (!user || !assignmentId) return;
     
-    await supabase.from('cheat_logs').insert({
+    await supabase.from('cheat_logs').insert([{
       user_id: user.id,
       assignment_id: assignmentId,
       event_type: eventType,
       details,
-    });
+    }]);
   };
 
   const handleAutoSubmit = useCallback(() => {
@@ -271,13 +290,13 @@ export default function QuizPage() {
     const timeTaken = Math.round((Date.now() - questionStartTime.current) / 1000);
     const isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
 
-    await supabase.from('submissions').insert({
+    await supabase.from('submissions').insert([{
       assignment_id: assignmentId,
       question_id: currentQuestion.id,
       user_code: userCode,
       is_correct: isCorrect,
       time_taken: timeTaken,
-    });
+    }]);
 
     setIsSubmitting(false);
 
@@ -307,7 +326,6 @@ export default function QuizPage() {
     setQuizCompleted(true);
   };
 
-  // Set initial code when question changes
   useEffect(() => {
     if (currentQuestion) {
       setUserCode(currentQuestion.incorrect_code);
@@ -316,7 +334,7 @@ export default function QuizPage() {
 
   if (loading) {
     return (
-      <div className="dark min-h-screen bg-background flex items-center justify-center">
+      <div className="dark min-h-screen bg-background obsidian-gradient flex items-center justify-center">
         <div className="text-primary font-mono animate-pulse">Loading quiz...</div>
       </div>
     );
@@ -324,10 +342,11 @@ export default function QuizPage() {
 
   if (quizCompleted) {
     return (
-      <div className="dark min-h-screen bg-background flex items-center justify-center p-4">
-        <Card className="terminal-bg border-primary/30 border-glow max-w-md w-full">
+      <div className="dark min-h-screen bg-background obsidian-gradient flex items-center justify-center p-4">
+        <div className="absolute inset-0 scanline pointer-events-none opacity-30" />
+        <Card className="glass-effect border-primary/30 border-glow max-w-md w-full">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 p-4 rounded-full bg-primary/10">
+            <div className="mx-auto mb-4 p-4 rounded-full bg-primary/20 animate-pulse-glow">
               <CheckCircle className="w-12 h-12 text-primary" />
             </div>
             <CardTitle className="text-2xl font-mono text-foreground">
@@ -337,7 +356,7 @@ export default function QuizPage() {
           <CardContent className="text-center space-y-6">
             {results && (
               <div className="space-y-2">
-                <p className="text-4xl font-bold text-primary font-mono">
+                <p className="text-4xl font-bold text-primary font-mono text-glow">
                   {results.correct}/{results.total}
                 </p>
                 <p className="text-muted-foreground font-mono">
@@ -345,7 +364,7 @@ export default function QuizPage() {
                 </p>
               </div>
             )}
-            <Button onClick={() => navigate('/')} className="w-full font-mono">
+            <Button onClick={() => navigate('/')} className="w-full font-mono bg-primary hover:bg-primary/90">
               Return to Dashboard
             </Button>
           </CardContent>
@@ -356,7 +375,7 @@ export default function QuizPage() {
 
   if (!currentQuestion) {
     return (
-      <div className="dark min-h-screen bg-background flex items-center justify-center">
+      <div className="dark min-h-screen bg-background obsidian-gradient flex items-center justify-center">
         <div className="text-muted-foreground font-mono">No questions available</div>
       </div>
     );
@@ -366,16 +385,15 @@ export default function QuizPage() {
   const timerPercent = (timeLeft / (quiz?.time_per_question || 150)) * 100;
 
   return (
-    <div className="dark min-h-screen bg-background flex flex-col">
+    <div className="dark min-h-screen bg-background obsidian-gradient flex flex-col">
       <div className="absolute inset-0 scanline pointer-events-none opacity-20" />
       
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border/50 glass-effect sticky top-0 z-50">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Bug className="w-6 h-6 text-primary" />
             <span className="font-mono text-foreground">{quiz?.title}</span>
-            <Badge variant="outline">{quiz?.language.toUpperCase()}</Badge>
+            <Badge variant="outline" className="border-primary/30 text-primary">{quiz?.language.toUpperCase()}</Badge>
           </div>
           
           <div className="flex items-center gap-4">
@@ -393,8 +411,7 @@ export default function QuizPage() {
         <Progress value={progressPercent} className="h-1" />
       </header>
 
-      {/* Timer Bar */}
-      <div className="bg-card/30 border-b border-border/30">
+      <div className="glass-effect border-b border-border/30">
         <div className="container mx-auto px-4 py-2 flex items-center gap-4">
           <Clock className={`w-5 h-5 ${timeLeft <= 30 ? 'text-destructive animate-pulse' : 'text-primary'}`} />
           <div className="flex-1">
@@ -409,9 +426,8 @@ export default function QuizPage() {
         </div>
       </div>
 
-      {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-4 flex flex-col">
-        <Card className="terminal-bg border-border/50 mb-4">
+      <main className="flex-1 container mx-auto px-4 py-4 flex flex-col relative z-10">
+        <Card className="glass-effect border-border/50 mb-4">
           <CardHeader className="py-3">
             <CardTitle className="font-mono text-foreground text-lg">
               <span className="text-primary">&gt;</span> {currentQuestion.title}
@@ -419,12 +435,12 @@ export default function QuizPage() {
           </CardHeader>
           <CardContent className="py-2">
             <p className="text-sm text-muted-foreground font-mono">
-              Expected output: <code className="bg-muted px-2 py-1 rounded">{currentQuestion.expected_output}</code>
+              Expected output: <code className="bg-primary/10 px-2 py-1 rounded text-primary">{currentQuestion.expected_output}</code>
             </p>
           </CardContent>
         </Card>
 
-        <div className="flex-1 min-h-[400px] rounded-lg overflow-hidden border border-border/50">
+        <div className="flex-1 min-h-[400px] rounded-lg overflow-hidden border border-primary/30 border-glow">
           <Editor
             height="100%"
             language={languageToMonaco[quiz?.language || 'javascript']}
@@ -449,7 +465,7 @@ export default function QuizPage() {
           <Button
             onClick={handleSubmitAnswer}
             disabled={isSubmitting}
-            className="font-mono min-w-40"
+            className="font-mono min-w-40 bg-primary hover:bg-primary/90"
             size="lg"
           >
             {isSubmitting ? (
