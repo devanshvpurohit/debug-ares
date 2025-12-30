@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Space Grotesk', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
       },
       colors: {
@@ -53,7 +53,6 @@ export default {
         },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
-        terminal: "hsl(var(--terminal))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -80,12 +79,12 @@ export default {
           to: { height: "0" },
         },
         "pulse-glow": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+          "0%, 100%": { opacity: "1", boxShadow: "0 0 20px hsl(262 83% 58% / 0.4)" },
+          "50%": { opacity: "0.7", boxShadow: "0 0 40px hsl(262 83% 58% / 0.6)" },
         },
-        "typing": {
-          "0%": { width: "0" },
-          "100%": { width: "100%" },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
         },
         "blink": {
           "0%, 50%": { opacity: "1" },
@@ -96,7 +95,7 @@ export default {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "pulse-glow": "pulse-glow 2s ease-in-out infinite",
-        "typing": "typing 2s steps(20) forwards",
+        "float": "float 3s ease-in-out infinite",
         "blink": "blink 1s step-end infinite",
       },
     },
