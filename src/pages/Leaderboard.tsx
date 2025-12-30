@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Trophy, Clock, Target, Medal } from 'lucide-react';
+import { ArrowLeft, Trophy, Clock, Target, Medal, Terminal, Cpu, Binary, Zap } from 'lucide-react';
 
 interface Quiz {
   id: string;
@@ -23,6 +23,32 @@ interface LeaderboardEntry {
   total_time: number;
   total_questions: number;
 }
+
+// Matrix rain background component
+const MatrixBackground = () => {
+  const columns = Array.from({ length: 12 }, (_, i) => i);
+  const characters = 'アイウエオカキクケコ0123456789';
+
+  return (
+    <div className="matrix-rain-container opacity-10">
+      {columns.map((col) => (
+        <div
+          key={col}
+          className="matrix-rain-column"
+          style={{
+            left: `${col * 8}%`,
+            animationDuration: `${5 + Math.random() * 5}s`,
+            animationDelay: `${Math.random() * 3}s`,
+          }}
+        >
+          {Array.from({ length: 20 }, () =>
+            characters.charAt(Math.floor(Math.random() * characters.length))
+          ).join(' ')}
+        </div>
+      ))}
+    </div>
+  );
+};
 
 export default function Leaderboard() {
   const navigate = useNavigate();
@@ -45,7 +71,7 @@ export default function Leaderboard() {
       .select('*')
       .eq('is_active', true)
       .order('title');
-    
+
     setQuizzes((data as Quiz[]) || []);
   };
 
@@ -115,10 +141,10 @@ export default function Leaderboard() {
 
   const getMedalColor = (index: number) => {
     switch (index) {
-      case 0: return 'text-yellow-400';
-      case 1: return 'text-gray-400';
-      case 2: return 'text-amber-600';
-      default: return 'text-muted-foreground';
+      case 0: return 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]';
+      case 1: return 'text-gray-300 drop-shadow-[0_0_8px_rgba(209,213,219,0.5)]';
+      case 2: return 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]';
+      default: return 'text-matrix-green/60';
     }
   };
 
@@ -129,36 +155,47 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="dark min-h-screen bg-background obsidian-gradient">
-      <div className="absolute inset-0 scanline pointer-events-none opacity-30" />
-      
-      <div className="absolute top-40 left-20 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-40 right-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl" />
-      
-      <header className="border-b border-border/50 glass-effect sticky top-0 z-50">
+    <div className="dark min-h-screen bg-black matrix-bg relative overflow-hidden">
+      {/* Matrix background */}
+      <MatrixBackground />
+
+      {/* Scanline overlay */}
+      <div className="absolute inset-0 scanline pointer-events-none opacity-20" />
+
+      {/* Floating orbs */}
+      <div className="absolute top-40 left-20 w-80 h-80 bg-matrix-green/5 rounded-full blur-3xl animate-float" />
+      <div className="absolute bottom-40 right-20 w-64 h-64 bg-matrix-green/5 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+
+      {/* Header */}
+      <header className="border-b border-matrix-green/20 glass-effect sticky top-0 z-50 bg-black/80">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')} className="hover:bg-primary/10">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/')}
+              className="hover:bg-matrix-green/10 text-matrix-green"
+            >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/20 border border-primary/30">
-                <Trophy className="w-6 h-6 text-primary" />
+              <div className="p-2 rounded-lg bg-black border border-matrix-green/50 border-glow animate-pulse-glow">
+                <Trophy className="w-6 h-6 text-matrix-green" />
               </div>
-              <span className="text-xl font-bold text-foreground font-mono">
-                LEADERBOARD<span className="text-primary">_</span>
+              <span className="text-xl font-bold text-matrix-green font-matrix tracking-wider text-glow">
+                LEADERBOARD<span className="text-white">_</span>
               </span>
             </div>
           </div>
-          
+
           <Select value={selectedQuiz} onValueChange={setSelectedQuiz}>
-            <SelectTrigger className="w-48 bg-background/50 font-mono border-primary/30">
+            <SelectTrigger className="w-48 bg-black font-mono border-matrix-green/30 text-matrix-green focus:border-matrix-green focus:ring-matrix-green/30">
               <SelectValue placeholder="Filter by quiz" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Quizzes</SelectItem>
+            <SelectContent className="bg-black border-matrix-green/30 text-matrix-green">
+              <SelectItem value="all" className="font-mono focus:bg-matrix-green/20 focus:text-matrix-green">All Quizzes</SelectItem>
               {quizzes.map((quiz) => (
-                <SelectItem key={quiz.id} value={quiz.id}>
+                <SelectItem key={quiz.id} value={quiz.id} className="font-mono focus:bg-matrix-green/20 focus:text-matrix-green">
                   {quiz.title}
                 </SelectItem>
               ))}
@@ -168,49 +205,65 @@ export default function Leaderboard() {
       </header>
 
       <main className="container mx-auto px-4 py-8 relative z-10">
+        {/* Header info */}
+        <div className="mb-8 animate-fade-in-up">
+          <div className="flex items-center gap-2 text-matrix-green/70 font-mono text-xs mb-2">
+            <Terminal className="w-4 h-4" />
+            <span className="animate-blink">▌</span>
+            <span>RANKINGS_DATABASE</span>
+          </div>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <div className="text-primary font-mono animate-pulse">Loading rankings...</div>
+            <div className="text-matrix-green font-mono flex items-center gap-3 text-glow">
+              <Zap className="w-6 h-6 animate-pulse" />
+              <span className="animate-pulse">Loading rankings...</span>
+            </div>
           </div>
         ) : leaderboard.length === 0 ? (
-          <Card className="glass-effect border-border/50">
+          <Card className="glass-effect border-matrix-green/20 bg-black/80 cyber-border animate-fade-in-up">
             <CardContent className="flex flex-col items-center py-20">
-              <Trophy className="w-16 h-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold text-foreground mb-2 font-mono">
+              <div className="p-4 rounded-xl bg-black border border-matrix-green/30 border-glow mb-6">
+                <Trophy className="w-16 h-16 text-matrix-green/50" />
+              </div>
+              <h3 className="text-xl font-semibold text-matrix-green mb-2 font-matrix tracking-wide">
                 No Rankings Yet
               </h3>
-              <p className="text-muted-foreground text-center font-mono text-sm">
-                Complete quizzes to appear on the leaderboard.
+              <p className="text-matrix-green/50 text-center font-mono text-sm">
+                [EMPTY] Complete quizzes to appear on the leaderboard.
               </p>
             </CardContent>
           </Card>
         ) : (
           <>
+            {/* Top 3 podium */}
             {leaderboard.length >= 3 && (
-              <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 gap-4 mb-8 max-w-2xl mx-auto animate-fade-in-up">
                 {[1, 0, 2].map((position) => {
                   const entry = leaderboard[position];
                   if (!entry) return null;
-                  
+
                   return (
                     <Card
                       key={entry.user_id}
-                      className={`glass-effect border-border/50 ${position === 0 ? 'transform -translate-y-4 border-primary/50 border-glow' : ''}`}
+                      className={`glass-effect border-matrix-green/20 bg-black/80 cyber-border transition-all duration-500 hover:border-matrix-green/60 ${position === 0 ? 'transform -translate-y-4 border-matrix-green/50 border-glow-intense' : ''
+                        }`}
                     >
                       <CardContent className="pt-6 text-center">
                         <Medal className={`w-10 h-10 mx-auto mb-2 ${getMedalColor(position)}`} />
-                        <p className="font-mono text-2xl font-bold text-foreground mb-1">
+                        <p className="font-matrix text-2xl font-bold text-matrix-green mb-1 text-glow">
                           #{position + 1}
                         </p>
-                        <p className="text-sm text-muted-foreground font-mono truncate">
+                        <p className="text-sm text-matrix-green/70 font-mono truncate">
                           {entry.full_name || entry.email.split('@')[0]}
                         </p>
                         <div className="mt-3 space-y-1">
-                          <div className="flex items-center justify-center gap-1 text-primary">
+                          <div className="flex items-center justify-center gap-1 text-matrix-green">
                             <Target className="w-4 h-4" />
-                            <span className="font-mono">{entry.correct_count}</span>
+                            <span className="font-mono text-glow">{entry.correct_count}</span>
                           </div>
-                          <div className="flex items-center justify-center gap-1 text-muted-foreground text-sm">
+                          <div className="flex items-center justify-center gap-1 text-matrix-green/50 text-sm">
                             <Clock className="w-3 h-3" />
                             <span className="font-mono">{formatTime(entry.total_time)}</span>
                           </div>
@@ -222,51 +275,56 @@ export default function Leaderboard() {
               </div>
             )}
 
-            <Card className="glass-effect border-border/50">
+            {/* Full rankings table */}
+            <Card className="glass-effect border-matrix-green/20 bg-black/80 cyber-border animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
               <CardHeader>
-                <CardTitle className="font-mono text-foreground">
-                  <span className="text-primary">&gt;</span> Full Rankings
+                <CardTitle className="font-matrix text-matrix-green tracking-wide text-glow flex items-center gap-2">
+                  <Binary className="w-5 h-5" />
+                  <span className="text-white">{'>'}</span> Full Rankings
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-border/50">
-                      <TableHead className="font-mono w-16">Rank</TableHead>
-                      <TableHead className="font-mono">Player</TableHead>
-                      <TableHead className="font-mono text-center">Correct</TableHead>
-                      <TableHead className="font-mono text-center">Total</TableHead>
-                      <TableHead className="font-mono text-center">Accuracy</TableHead>
-                      <TableHead className="font-mono text-right">Time</TableHead>
+                    <TableRow className="border-matrix-green/20 hover:bg-transparent">
+                      <TableHead className="font-mono w-16 text-matrix-green/70">Rank</TableHead>
+                      <TableHead className="font-mono text-matrix-green/70">Player</TableHead>
+                      <TableHead className="font-mono text-center text-matrix-green/70">Correct</TableHead>
+                      <TableHead className="font-mono text-center text-matrix-green/70">Total</TableHead>
+                      <TableHead className="font-mono text-center text-matrix-green/70">Accuracy</TableHead>
+                      <TableHead className="font-mono text-right text-matrix-green/70">Time</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {leaderboard.map((entry, index) => (
-                      <TableRow key={entry.user_id} className="border-border/30">
+                      <TableRow
+                        key={entry.user_id}
+                        className="border-matrix-green/10 hover:bg-matrix-green/5 transition-colors"
+                      >
                         <TableCell className="font-mono">
                           <div className="flex items-center gap-2">
                             {index < 3 && (
                               <Medal className={`w-4 h-4 ${getMedalColor(index)}`} />
                             )}
-                            <span className={index < 3 ? 'font-bold' : ''}>
+                            <span className={`text-matrix-green ${index < 3 ? 'font-bold text-glow' : ''}`}>
                               #{index + 1}
                             </span>
                           </div>
                         </TableCell>
                         <TableCell>
                           <div>
-                            <p className="font-mono text-foreground">
+                            <p className="font-mono text-matrix-green">
                               {entry.full_name || 'Anonymous'}
                             </p>
-                            <p className="text-xs text-muted-foreground font-mono">
+                            <p className="text-xs text-matrix-green/40 font-mono">
                               {entry.email}
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell className="text-center font-mono text-primary font-bold">
+                        <TableCell className="text-center font-mono text-matrix-green font-bold text-glow">
                           {entry.correct_count}
                         </TableCell>
-                        <TableCell className="text-center font-mono text-muted-foreground">
+                        <TableCell className="text-center font-mono text-matrix-green/60">
                           {entry.total_questions}
                         </TableCell>
                         <TableCell className="text-center">
@@ -274,16 +332,16 @@ export default function Leaderboard() {
                             variant="outline"
                             className={
                               entry.correct_count / entry.total_questions >= 0.8
-                                ? 'bg-success/20 text-success border-success/30'
+                                ? 'bg-matrix-green/20 text-matrix-green border-matrix-green/30 font-mono'
                                 : entry.correct_count / entry.total_questions >= 0.5
-                                ? 'bg-warning/20 text-warning border-warning/30'
-                                : 'bg-destructive/20 text-destructive border-destructive/30'
+                                  ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30 font-mono'
+                                  : 'bg-red-500/20 text-red-400 border-red-500/30 font-mono'
                             }
                           >
                             {Math.round((entry.correct_count / entry.total_questions) * 100)}%
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono text-muted-foreground">
+                        <TableCell className="text-right font-mono text-matrix-green/60">
                           {formatTime(entry.total_time)}
                         </TableCell>
                       </TableRow>
@@ -295,6 +353,15 @@ export default function Leaderboard() {
           </>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-matrix-green/10 py-4 mt-8 relative z-10">
+        <div className="container mx-auto px-4 text-center">
+          <p className="text-matrix-green/30 text-xs font-mono tracking-widest">
+            {'</>'}DEBUG ARENA v2.0 | <span className="text-matrix-green/50">MATRIX</span> EDITION{'</>'}
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
