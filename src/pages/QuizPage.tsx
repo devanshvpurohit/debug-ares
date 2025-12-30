@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import Editor from '@monaco-editor/react';
-import { AlertTriangle, Clock, ChevronRight, Bug, CheckCircle } from 'lucide-react';
+import { AlertTriangle, Clock, ChevronRight, Bug, CheckCircle, Play, Loader2, Terminal } from 'lucide-react';
 
 interface Quiz {
   id: string;
