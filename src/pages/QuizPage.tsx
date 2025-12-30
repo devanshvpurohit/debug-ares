@@ -341,43 +341,47 @@ export default function QuizPage() {
 
     const timeTaken = Math.round((Date.now() - questionStartTime.current) / 1000);
 
-    // First try output match, fallback to code match
+    // Only check output match - not code comparison
     let isCorrect = false;
 
-    // Attempt output verification via API if expected output is provided
-    if (currentQuestion.expected_output) {
-      try {
-        const language = quiz?.language || 'javascript';
-        const version = {
-          'javascript': '18.15.0',
-          'python': '3.10.0',
-          'java': '17.0.2',
-          'cpp': '10.2.0',
-          'go': '1.16.2',
-          'csharp': '5.0.201',
-          'ruby': '3.0.1'
-        }[language] || '18.15.0';
+    try {
+      const language = quiz?.language || 'javascript';
+      const version = {
+        'javascript': '18.15.0',
+        'python': '3.10.0',
+        'java': '17.0.2',
+        'cpp': '10.2.0',
+        'go': '1.16.2',
+        'csharp': '5.0.201',
+        'ruby': '3.0.1'
+      }[language] || '18.15.0';
 
-        const response = await fetch('https://emkc.org/api/v2/piston/execute', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            language,
-            version,
-            files: [{ content: userCode }]
-          })
-        });
+      const response = await fetch('https://emkc.org/api/v2/piston/execute', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          language,
+          version,
+          files: [{ content: userCode }]
+        })
+      });
 
-        const data = await response.json();
-        if (data.run && data.run.stdout?.trim() === currentQuestion.expected_output.trim()) {
-          isCorrect = true;
-        }
-      } catch (e) {
-        // Fallback to strict code match if API fails
-        isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
+      const data = await response.json();
+
+      if (data.run) {
+        const actualOutput = (data.run.stdout || '').trim().replace(/\s+/g, ' ');
+        const expectedOutput = (currentQuestion.expected_output || '').trim().replace(/\s+/g, ' ');
+
+        // Case-insensitive, whitespace-normalized comparison
+        isCorrect = actualOutput.toLowerCase() === expectedOutput.toLowerCase();
+
+        // Show user their output in the console
+        setOutput(data.run.stdout || data.run.stderr || 'No output');
       }
-    } else {
-      isCorrect = normalizeCode(userCode) === normalizeCode(currentQuestion.correct_code);
+    } catch (e) {
+      console.error('Execution error:', e);
+      // If API fails, mark as incorrect
+      setOutput('Execution failed - please try again');
     }
 
     await (supabase.from('submissions') as any).insert([{
